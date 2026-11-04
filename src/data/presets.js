@@ -7,6 +7,7 @@ export const PRESETS = [
   { id: 'tick', name: '描边框', note: '双线内框 · 角标', bg: '#FBF9F4', ink: '#191713', border: 8, bottom: 8, radius: 0, hairline: true, shadow: 0, ticks: true, film: false, pos: 'bl', dark: false },
   { id: 'frost', name: '磨砂玻璃', note: '毛玻璃底 · 柔光', bg: '#EFE9DE', ink: '#2B251D', border: 6.4, bottom: 6.4, radius: 0.9, hairline: false, shadow: 0.55, ticks: false, film: false, pos: 'bl', dark: true },
   { id: 'liquid', name: '液态玻璃', note: '高光折射 · 通透', bg: '#E9E2D8', ink: '#FFFFFF', border: 7, bottom: 5.6, radius: 2.2, hairline: false, shadow: 0.5, ticks: false, film: false, pos: 'bl', dark: true },
+  { id: 'blurred', name: '柔焦背景', note: '原图扩展 · 模糊留边', bg: '#101713', ink: '#F5F2E9', border: 4.2, bottom: 8, radius: 0.8, hairline: false, shadow: 1, ticks: false, film: false, blurBackground: true, blurStrength: 0.09, darken: 0.58, pos: 'bl', dark: true },
 ]
 
 export const INITIAL_STYLE = {
@@ -18,6 +19,9 @@ export const INITIAL_STYLE = {
   shadow: 0,
   ticks: false,
   film: false,
+  blurBackground: false,
+  blurStrength: 0,
+  darken: 0,
 }
 
 export const INITIAL_WATERMARK = {
@@ -42,5 +46,8 @@ export function styleForPreset(preset) {
     shadow: preset.shadow,
     ticks: preset.ticks,
     film: preset.film,
+    blurBackground: preset.blurBackground ?? false,
+    blurStrength: preset.blurStrength ?? 0,
+    darken: preset.darken ?? 0,
   }
 }

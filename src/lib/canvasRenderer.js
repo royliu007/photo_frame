@@ -147,7 +147,7 @@ function captureDetails(photo, watermark) {
   return parts.join(' · ')
 }
 
-export function drawFrame(target, photo, style, watermark, maxSide = Infinity) {
+export function drawBlurBackground(target, photo, style, maxSide = Infinity) {
   if (!target || !photo?.image) return
   const geometry = getFrameGeometry(photo, style)
   const scale = Math.min(1, maxSide / Math.max(geometry.width, geometry.height))
@@ -157,8 +157,155 @@ export function drawFrame(target, photo, style, watermark, maxSide = Infinity) {
   const context = target.getContext('2d')
   context.setTransform(scale, 0, 0, scale, 0, 0)
   context.clearRect(0, 0, geometry.width, geometry.height)
-  context.fillStyle = style.bg
-  context.fillRect(0, 0, geometry.width, geometry.height)
+  const coverScale = Math.max(geometry.width / photo.width, geometry.height / photo.height)
+  const backgroundWidth = photo.width * coverScale
+  const backgroundHeight = photo.height * coverScale
+  context.drawImage(
+    photo.image,
+    (geometry.width - backgroundWidth) / 2,
+    (geometry.height - backgroundHeight) / 2,
+    backgroundWidth,
+    backgroundHeight,
+  )
+}
+
+function blurPixelsWithGaussianKernel(canvas, sigma) {
+  if (sigma < 0.75) return
+  const context = canvas.getContext('2d', { willReadFrequently: true })
+  const image = context.getImageData(0, 0, canvas.width, canvas.height)
+  const source = image.data
+  const radius = Math.ceil(sigma * 3)
+  const kernel = new Float32Array(radius * 2 + 1)
+  let kernelTotal = 0
+  for (let offset = -radius; offset <= radius; offset += 1) {
+    const weight = Math.exp(-(offset * offset) / (2 * sigma * sigma))
+    kernel[offset + radius] = weight
+    kernelTotal += weight
+  }
+  for (let index = 0; index < kernel.length; index += 1) kernel[index] /= kernelTotal
+
+  const horizontal = new Float32Array(source.length)
+  const width = canvas.width
+  const height = canvas.height
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const pixel = (y * width + x) * 4
+      let red = 0
+      let green = 0
+      let blue = 0
+      let alpha = 0
+      for (let offset = -radius; offset <= radius; offset += 1) {
+        const sampleX = Math.min(width - 1, Math.max(0, x + offset))
+        const sample = (y * width + sampleX) * 4
+        const weight = kernel[offset + radius]
+        red += source[sample] * weight
+        green += source[sample + 1] * weight
+        blue += source[sample + 2] * weight
+        alpha += source[sample + 3] * weight
+      }
+      horizontal[pixel] = red
+      horizontal[pixel + 1] = green
+      horizontal[pixel + 2] = blue
+      horizontal[pixel + 3] = alpha
+    }
+  }
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const pixel = (y * width + x) * 4
+      let red = 0
+      let green = 0
+      let blue = 0
+      let alpha = 0
+      for (let offset = -radius; offset <= radius; offset += 1) {
+        const sampleY = Math.min(height - 1, Math.max(0, y + offset))
+        const sample = (sampleY * width + x) * 4
+        const weight = kernel[offset + radius]
+        red += horizontal[sample] * weight
+        green += horizontal[sample + 1] * weight
+        blue += horizontal[sample + 2] * weight
+        alpha += horizontal[sample + 3] * weight
+      }
+      source[pixel] = red
+      source[pixel + 1] = green
+      source[pixel + 2] = blue
+      source[pixel + 3] = alpha
+    }
+  }
+  context.putImageData(image, 0, 0)
+}
+
+function drawGaussianBackground(context, photo, geometry, blurRadius) {
+  const padding = Math.ceil(blurRadius * 4)
+  const expandedWidth = geometry.width + padding * 2
+  const expandedHeight = geometry.height + padding * 2
+  const maxWorkSide = 720
+  const maxWorkSigma = 8
+  const workScale = blurRadius > 0
+    ? Math.min(1, maxWorkSide / Math.max(expandedWidth, expandedHeight), maxWorkSigma / blurRadius)
+    : 1
+  const backgroundCanvas = document.createElement('canvas')
+  backgroundCanvas.width = Math.max(1, Math.round(expandedWidth * workScale))
+  backgroundCanvas.height = Math.max(1, Math.round(expandedHeight * workScale))
+  const backgroundContext = backgroundCanvas.getContext('2d', { willReadFrequently: true })
+  const backgroundScale = Math.max(expandedWidth / photo.width, expandedHeight / photo.height)
+  const backgroundWidth = photo.width * backgroundScale
+  const backgroundHeight = photo.height * backgroundScale
+  backgroundContext.drawImage(
+    photo.image,
+    (expandedWidth - backgroundWidth) * workScale / 2,
+    (expandedHeight - backgroundHeight) * workScale / 2,
+    backgroundWidth * workScale,
+    backgroundHeight * workScale,
+  )
+
+  const workScaleX = backgroundCanvas.width / expandedWidth
+  const workScaleY = backgroundCanvas.height / expandedHeight
+  blurPixelsWithGaussianKernel(backgroundCanvas, blurRadius * (workScaleX + workScaleY) / 2)
+  context.drawImage(
+    backgroundCanvas,
+    padding * workScaleX,
+    padding * workScaleY,
+    geometry.width * workScaleX,
+    geometry.height * workScaleY,
+    0,
+    0,
+    geometry.width,
+    geometry.height,
+  )
+}
+
+export function drawFrame(target, photo, style, watermark, maxSide = Infinity, { drawBackground = true } = {}) {
+  if (!target || !photo?.image) return
+  const geometry = getFrameGeometry(photo, style)
+  const scale = Math.min(1, maxSide / Math.max(geometry.width, geometry.height))
+  target.width = Math.max(1, Math.round(geometry.width * scale))
+  target.height = Math.max(1, Math.round(geometry.height * scale))
+
+  const context = target.getContext('2d')
+  context.setTransform(scale, 0, 0, scale, 0, 0)
+  context.clearRect(0, 0, geometry.width, geometry.height)
+  if (style.blurBackground && drawBackground) {
+    const blurRadius = geometry.shortSide * (style.blurStrength || 0)
+    drawGaussianBackground(context, photo, geometry, blurRadius)
+    context.fillStyle = `rgba(8, 14, 11, ${style.darken})`
+    context.fillRect(0, 0, geometry.width, geometry.height)
+    const vignette = context.createRadialGradient(
+      geometry.width / 2,
+      geometry.height / 2,
+      geometry.shortSide * 0.2,
+      geometry.width / 2,
+      geometry.height / 2,
+      Math.max(geometry.width, geometry.height) * 0.72,
+    )
+    vignette.addColorStop(0, 'rgba(0,0,0,0)')
+    vignette.addColorStop(1, 'rgba(0,0,0,.36)')
+    context.fillStyle = vignette
+    context.fillRect(0, 0, geometry.width, geometry.height)
+  } else if (!style.blurBackground) {
+    context.fillStyle = style.bg
+    context.fillRect(0, 0, geometry.width, geometry.height)
+  }
 
   const border = geometry.border
   const x = border
@@ -169,9 +316,11 @@ export function drawFrame(target, photo, style, watermark, maxSide = Infinity) {
 
   if (style.shadow > 0) {
     context.save()
-    context.shadowColor = `rgba(34,24,12,${0.34 * style.shadow})`
-    context.shadowBlur = geometry.shortSide * 0.075 * style.shadow
-    context.shadowOffsetY = geometry.shortSide * 0.024 * style.shadow
+    context.shadowColor = style.blurBackground
+      ? `rgba(0,0,0,${0.72 * style.shadow})`
+      : `rgba(34,24,12,${0.34 * style.shadow})`
+    context.shadowBlur = geometry.shortSide * (style.blurBackground ? 0.105 : 0.075) * style.shadow
+    context.shadowOffsetY = geometry.shortSide * (style.blurBackground ? 0.04 : 0.024) * style.shadow
     context.fillStyle = '#000'
     roundedRect(context, x, y, width, height, radius)
     context.fill()

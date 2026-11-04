@@ -27,7 +27,7 @@ function PresetGrid({ presetId, onSelect }) {
         const bottom = preset.bottom / 2.2
         return (
           <button className="preset" key={preset.id} aria-pressed={preset.id === presetId} onClick={() => onSelect(preset.id)}>
-            <div className="mini" style={{ background: preset.bg }}>
+            <div className={`mini${preset.blurBackground ? ' is-blur' : ''}`} style={{ background: preset.bg }}>
               <span className={`ph-in${preset.dark ? ' dark' : ''}`} style={{ left: `${top}%`, right: `${top}%`, top: `${top}%`, bottom: `${top + bottom}%`, borderRadius: preset.radius > 1.4 ? 3 : undefined }} />
             </div>
             <b>{preset.name}</b><small>{preset.note}</small>
@@ -63,6 +63,34 @@ function SpacingSection({ style, onStyleChange }) {
       </div>
       <Toggle label="压边细线" checked={style.hairline} onChange={(hairline) => onStyleChange({ hairline })} />
       <Toggle label="投影" checked={style.shadow > 0} onChange={(enabled) => onStyleChange({ shadow: enabled ? 0.7 : 0 })} />
+    </div>
+  )
+}
+
+function BlurSection({ style, onStyleChange }) {
+  if (!style.blurBackground) return null
+  return (
+    <div className="sec">
+      <SectionHeading title="背景模糊" subtitle="Blur" />
+      <RangeField
+        id="blurStrengthRange"
+        label="模糊程度"
+        value={style.blurStrength * 100}
+        min={0}
+        max={12}
+        step={0.5}
+        onChange={(value) => onStyleChange({ blurStrength: value / 100 })}
+      />
+      <RangeField
+        id="backgroundDarkenRange"
+        label="背景压暗"
+        value={(style.darken ?? 0.58) * 100}
+        min={0}
+        max={75}
+        step={5}
+        onChange={(value) => onStyleChange({ darken: value / 100 })}
+      />
+      <p className="hint">压暗模糊背景并加强主体投影，让清晰照片更突出。</p>
     </div>
   )
 }
@@ -109,6 +137,7 @@ export default function SettingsPanel({ presetId, style, watermark, format, onPr
       <div className="right-scroll">
         <div className="sec"><SectionHeading title="边框样式" subtitle="Frame" /><PresetGrid presetId={presetId} onSelect={onPresetChange} /></div>
         <SpacingSection style={style} onStyleChange={onStyleChange} />
+        <BlurSection style={style} onStyleChange={onStyleChange} />
         <WatermarkSection watermark={watermark} bottom={style.bottom} onWatermarkChange={onWatermarkChange} />
         <div className="sec">
           <SectionHeading title="导出" subtitle="Output" />
