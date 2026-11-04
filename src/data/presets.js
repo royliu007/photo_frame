@@ -29,11 +29,11 @@ export const INITIAL_WATERMARK = {
   text: '© 留白 STUDIO',
   pos: 'bl',
   opacity: 0.62,
-  size: 100,
+  size: 115,
   ink: '#191713',
-  meta: true,
+  meta: false,
   brand: '',
-  showExposure: false,
+  showExposure: true,
 }
 
 export function styleForPreset(preset) {
