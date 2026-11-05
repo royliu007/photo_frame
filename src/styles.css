@@ -388,18 +388,59 @@
   }
 
   @media (max-width:620px){
-    .topbar{height:54px}
+    body{overflow-x:hidden;-webkit-text-size-adjust:100%}
+    .app{width:100%;min-height:100dvh}
+    .topbar{height:54px;min-height:54px;padding:0 12px;gap:8px}
     .brand-txt span,.topbar > .vline,.chip{display:none}
     .brand-txt b{font-size:14px}
+    .topbar .btn{height:34px;padding:0 10px;font-size:11.5px}
     .workspace{display:flex;flex-direction:column}
-    .rail--left{height:260px;border-right:0;border-bottom:1px solid var(--line)}
-    .photo-list{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;padding:0 10px 10px}
-    .ph{min-width:178px;align-self:flex-start}
-    .stage-col{min-height:62vh}
-    .stage{min-height:420px;padding:24px 12px}
-    .toolbar{height:auto;min-height:58px;flex-wrap:wrap;padding:10px;gap:6px}
+    .rail--left{height:auto;min-height:0;border-right:0;border-bottom:1px solid var(--line);padding-bottom:5px}
+    .rail--left .rail-head{padding:10px 13px 7px}
+    .rail--left .drop{
+      display:grid;grid-template-columns:28px minmax(0,1fr);align-items:center;gap:1px 9px;
+      margin:0 12px 7px;padding:8px 10px;text-align:left;border-radius:8px;
+    }
+    .rail--left .drop .plus{grid-row:1 / 3;width:25px;height:25px;margin:0;font-size:17px}
+    .rail--left .drop b{font-size:11.5px;line-height:1.3}
+    .rail--left .drop span{margin-top:0;font-size:9px;letter-spacing:0}
+    .photo-list{
+      display:flex;flex:none;align-items:center;gap:7px;min-height:67px;max-height:76px;
+      overflow-x:auto;overflow-y:hidden;padding:0 12px 7px;
+      scrollbar-width:none;
+    }
+    .photo-list::-webkit-scrollbar{display:none}
+    .ph{
+      width:min(242px,78vw);min-width:190px;max-width:242px;min-height:54px;flex:none;align-self:center;
+      grid-template-columns:22px 48px minmax(0,1fr);gap:7px;padding:5px 26px 5px 5px;
+    }
+    .ph .thumb{width:48px;height:40px}
+    .ph .meta b{font-size:10.5px}
+    .ph .meta span{font-size:8.5px}
+    .ph .tick{width:20px;height:20px;justify-self:center}
+    .ph .del{opacity:1;right:4px;top:4px;width:20px;height:20px;background:rgba(255,252,247,.94)}
+    .rail-foot{padding:7px 14px;font-size:9px}
+    .stage-col{position:sticky;top:54px;z-index:4;min-height:0}
+    .stage{height:38svh;min-height:250px;max-height:360px;flex:none;padding:34px 10px 10px}
+    .stage-tag{left:12px;top:11px;font-size:8.5px;letter-spacing:.1em}
+    .stage-tag b{font-size:9.5px}
+    .toolbar{
+      display:grid;grid-template-columns:auto auto minmax(0,1fr);align-items:center;
+      height:auto;min-height:54px;flex:none;padding:8px 10px;gap:6px;
+    }
     .toolbar .dims,.toolbar-vline{display:none}
     .toolbar .spacer{display:none}
-    .toolbar .btn{flex:1}
-    .right-scroll{padding:0 14px 18px}
+    .toolbar .zoom button{width:32px;height:32px}
+    .toolbar .zoom .val{min-width:42px}
+    .toolbar .btn--quiet{height:34px;white-space:nowrap}
+    .toolbar .btn--ghost{width:100%;min-width:0;height:34px;padding:0 8px;font-size:11px;white-space:nowrap}
+    .toolbar .btn--primary{display:none}
+    .rail--right{max-height:none;border-left:0;border-top:1px solid var(--line);overflow:visible}
+    .rail--right .rail-head{padding:13px 14px 7px}
+    .right-scroll{overflow:visible;padding:0 14px calc(20px + env(safe-area-inset-bottom))}
+    .input{height:40px;font-size:16px}
+    .row,.wm-top{min-height:38px}
+    .posgrid button{height:30px}
+    input[type=range]{height:26px}
+    .toast{bottom:calc(16px + env(safe-area-inset-bottom));max-width:calc(100vw - 32px);white-space:nowrap}
   }
